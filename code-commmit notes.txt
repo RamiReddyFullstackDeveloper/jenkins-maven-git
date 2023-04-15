@@ -1,0 +1,108 @@
+Step1: IAM User Must have (Recommoded)
+Step2: IAM User must have the codecommit Access for this add these two policies[PowerUser, CodeCommitFullAccess, IAMReadOnlyAccess and IAMUserChangePassword]
+Step3: Login to aws console Using IAM Username and password
+Step4: Go to Security Credentials tab in IAM User section and look at the HTTPS Git credentials for AWS CodeCommit
+Step5: Click on Generate Credentials and download the csv file which contains username and password for the git credentials.
+
+Now go to git bash ui
+and first check the git --version
+
+then clone the repository 
+git clone https://git-codecommit.ap-south-1.amazonaws.com/v1/repos/mphasis-skyview-repo
+
+and it will prompt the window for username and password then enter both username and password refer Step5.
+
+if it will not ask the username and password in windows then run the below two commands in git bash cli.
+
+Windows
+-------
+git config --global --unset credential.helper
+git config --global credential.helper "!aws codecommit credential-helper $@"
+git config --global credential.UseHttpPath true
+
+git config --list --show-origin
+this command will tell us the information about whe current user git information
+
+Linux:
+------
+git config --global credential.helper '!aws codecommit credential-helper $@'
+git config --global credential.UseHttpPath true
+
+git config --list --show-origin
+
+When ever you try to add file to git you may encounter the below error in git
+Please tell who are you msg: then follow the below two configurations
+E:\Demo_Repos\mphasis-skyview-repo>git config user.name "code-commit-demo-user-at-162932919284"   //IAM user name 
+E:\Demo_Repos\mphasis-skyview-repo>git config user.email "ramjava1256@gmail.com"     //aws root account user email
+
+Git Commmands:
+-------------
+1> create repo 
+   git init <repo name>
+2> clone repo
+   git clone <repo-url>
+   git clone https://git-codecommit.ap-south-1.amazonaws.com/v1/repos/mphasis-skyview-repo
+3> create branch 
+   git branch <new-branch-name>
+4> checkout branch
+   git checkout -b <new-branch-name>
+5> list the branches 
+   git branch -r
+   
+   git config --list
+   git origin -v
+   git remote add origin <git.repo-url>
+   git stash pop ->for gettig bak to work
+   
+   
+AWS Main  / Master Branch Deny Rules:
+-------------------------------------
+
+As per organization standars master copy is the production copy, don't give direct push and add the files permission to the on to the master branch for this rule add the below policies in in-line policy, go to json and clear the json and paste the below json.
+Note: Below Resource is the our repository ARN (go to the repository in aws console and click on the settings tyere you will find the Repo ARN)
+Note2: codecommit:References tag referes which branch you want to create / appy the rule. in our case i denied the all the uses to master branch.
+
+Example:
+
+E:\Demo_Repos\mphasis-skyview-repo>git push
+Enumerating objects: 7, done.
+Counting objects: 100% (7/7), done.
+Delta compression using up to 4 threads
+Compressing objects: 100% (4/4), done.
+Writing objects: 100% (5/5), 702 bytes | 175.00 KiB/s, done.
+Total 5 (delta 1), reused 0 (delta 0)
+To https://git-codecommit.ap-south-1.amazonaws.com/v1/repos/mphasis-skyview-repo
+ ! [remote rejected] master -> master (You don't have permission to push changes to this branch.)
+ 
+ 
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Deny",
+            "Action": [
+                "codecommit:GitPush",
+                "codecommit:DeleteBranch",
+                "codecommit:PutFile",
+                "codecommit:MergeBranchesByFastForward",
+                "codecommit:MergeBranchesBySquash",
+                "codecommit:MergeBranchesByThreeWay",
+                "codecommit:MergePullRequestByFastForward",
+                "codecommit:MergePullRequestBySquash",
+                "codecommit:MergePullRequestByThreeWay"
+            ],
+            "Resource": "arn:aws:codecommit:ap-south-1:162932919284:mphasis-skyview-repo",
+            "Condition": {
+                "StringEqualsIfExists": {
+                    "codecommit:References": [
+                        "refs/heads/master"
+                     ]
+                },
+                "Null": {
+                    "codecommit:References": "false"
+                }
+            }
+        }
+    ]
+}   
+

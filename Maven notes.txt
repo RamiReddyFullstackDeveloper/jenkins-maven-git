@@ -1,0 +1,220 @@
+Maven
+
+Step1: go to maven official website 
+       https://maven.apache.org/download.cgi
+Step2: copy and right click on apache-maven-3.9.1-bin.tar.gz (under linux) and select copy link addr
+       https://dlcdn.apache.org/maven/maven-3/3.9.1/binaries/apache-maven-3.9.1-bin.tar.gz
+Step3: go ec2-server and navigate to cd /opt folder and download the maven using wget command
+      $cd /opt
+	  $wget https://dlcdn.apache.org/maven/maven-3/3.9.1/binaries/apache-maven-3.9.1-bin.tar.gz
+Step4: Unzip the downloaded file using tar command
+      $tar -xzvf apache-maven-3.9.1-bin.tar.gz
+[root@jenkins opt]# ls -ltr
+total 8828
+-rw-r--r--. 1 root root 9039409 Mar 15 10:00 apache-maven-3.9.1-bin.tar.gz
+drwxr-xr-x. 4 root root      33 Mar 22 20:04 aws
+drwxr-xr-x. 6 root root      99 Apr 12 16:16 apache-maven-3.9.1 ----->this is unzipped fie
+
+[root@jenkins apache-maven-3.9.1]# cd apache-maven-3.9.1/bin/
+[root@jenkins bin]# ./mvn --version
+Apache Maven 3.9.1 (2e178502fcdbffc201671fb2537d0cb4b4cc58f8)
+Maven home: /opt/apache-maven-3.9.1
+Java version: 17.0.6, vendor: Amazon.com Inc., runtime: /usr/lib/jvm/java-17-amazon-corretto.x86_64
+Default locale: en, platform encoding: UTF-8
+OS name: "linux", version: "6.1.19-30.43.amzn2023.x86_64", arch: "amd64", family: "unix"
+
+We can identify easily the java installation path is : /usr/lib/jvm/java-17-amazon-corretto.x86_64
+Maven installation path is : /opt/apache-maven-3.9.1
+
+Now set maven path globally
+
+#if we want to run the mvn command outside of the mvn installed location, fot this go to nano_profile in mvn installed location if not file pls do $ls -a
+Note: go to root directory like root@ip $ pwd
+the output should be root and do the ls -la
+[root@jenkins ~]# ls -la
+total 40
+dr-xr-x---.  5 root root  182 Apr 12 16:49 .
+dr-xr-xr-x. 18 root root  237 Mar 22 20:03 ..
+-rw-------.  1 root root 1480 Apr 11 06:40 .bash_history
+-rw-r--r--.  1 root root   18 Feb  2 00:15 .bash_logout
+-rw-r--r--.  1 root root  329 Apr 12 16:58 .bash_profile
+-rw-r--r--.  1 root root  429 Feb  2 00:15 .bashrc
+-rw-r--r--.  1 root root  100 Feb  2 00:15 .cshrc
+drwxr-xr-x.  3 root root   24 Apr 12 16:49 .m2
+drwx------.  2 root root   29 Apr  4 04:32 .ssh
+-rw-r--r--.  1 root root  129 Feb  2 00:15 .tcshrc
+-rw-------.  1 root root 8493 Apr 11 06:25 .viminfo
+-rw-r--r--.  1 root root  164 Apr 11 04:17 .wget-hsts
+drwxr-xr-x.  2 root root  162 Apr 11 06:25 linux
+
+$ nano .bash_profile
+
+# .bash_profile
+
+# Get the aliases and functions
+if [ -f ~/.bashrc ]; then
+        . ~/.bashrc
+fi
+
+# User specific environment and startup programs
+M2_HOME=/opt/apache-maven-3.9.1
+export M2_HOME
+M2=/opt/apache-maven-3.9.1/bin
+JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.x86_64
+export JAVA_HOME
+PATH=$PATH:$JAVA_HOME:$M2_HOME:$M2
+export PATH
+
+now save and exit -> ctrl X and press y
+---------------------------------------
+
+Now create the maven project using below command in windows or linux
+Go to the below ocation
+https://maven.apache.org/guides/getting-started/maven-in-five-minutes.html
+
+and copy the below command and run it
+
+mvn archetype:generate -DgroupId=com.mycompany.app -DartifactId=my-app -DarchetypeArtifactId=maven-archetype-quickstart -DarchetypeVersion=1.4 -DinteractiveMode=false
+[root@jenkins ~]# mkdir projects
+[root@jenkins ~]# cd projects/
+[root@jenkins projects]# mvn archetype:generate -DgroupId=com.mycompany.app -DartifactId=my-app -DarchetypeArtifactId=maven-archetype-quickstart -DarchetypeVersion=1.4 -DinteractiveMode=false
+final output is:
+[INFO] ----------------------------------------------------------------------------
+[INFO] Using following parameters for creating project from Archetype: maven-archetype-quickstart:1.4
+[INFO] ----------------------------------------------------------------------------
+[INFO] Parameter: groupId, Value: com.mycompany.app
+[INFO] Parameter: artifactId, Value: my-app
+[INFO] Parameter: version, Value: 1.0-SNAPSHOT
+[INFO] Parameter: package, Value: com.mycompany.app
+[INFO] Parameter: packageInPathFormat, Value: com/mycompany/app
+[INFO] Parameter: package, Value: com.mycompany.app
+[INFO] Parameter: groupId, Value: com.mycompany.app
+[INFO] Parameter: artifactId, Value: my-app
+[INFO] Parameter: version, Value: 1.0-SNAPSHOT
+[INFO] Project created from Archetype in dir: /root/projects/my-app
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  9.552 s
+[INFO] Finished at: 2023-04-12T17:25:20Z
+[INFO] ------------------------------------------------------------------------
+
+Note:if we want to see the project struture in tree format  in lnux, for this first install the tree command using below command.
+$yum install tree -yum
+now run the tree commmand like below u will see the project structur in tree format
+$tree
+[root@jenkins projects]# tree
+.
+└── my-app
+    ├── pom.xml
+    └── src
+        ├── main
+        │   └── java
+        │       └── com
+        │           └── mycompany
+        │               └── app
+        │                   └── App.java
+        └── test
+            └── java
+                └── com
+                    └── mycompany
+                        └── app
+                            └── AppTest.java
+
+12 directories, 3 files
+
+Step: Now run the mvn clean and mvn install and mvn package
+		when we run mvn package command it will prepare the jar file under target fooder
+		[root@jenkins my-app]# tree
+.
+├── pom.xml
+├── src
+│   ├── main
+│   │   └── java
+│   │       └── com
+│   │           └── mycompany
+│   │               └── app
+│   │                   └── App.java
+│   └── test
+│       └── java
+│           └── com
+│               └── mycompany
+│                   └── app
+│                       └── AppTest.java
+└── target
+    ├── classes
+    │   └── com
+    │       └── mycompany
+    │           └── app
+    │               └── App.class
+    ├── generated-sources
+    │   └── annotations
+    ├── generated-test-sources
+    │   └── test-annotations
+    ├── maven-archiver
+    │   └── pom.properties
+    ├── maven-status
+    │   └── maven-compiler-plugin
+    │       ├── compile
+    │       │   └── default-compile
+    │       │       ├── createdFiles.lst
+    │       │       └── inputFiles.lst
+    │       └── testCompile
+    │           └── default-testCompile
+    │               ├── createdFiles.lst
+    │               └── inputFiles.lst
+    ├── my-app-1.0-SNAPSHOT.jar
+    ├── surefire-reports
+    │   ├── TEST-com.mycompany.app.AppTest.xml
+    │   └── com.mycompany.app.AppTest.txt
+    └── test-classes
+        └── com
+            └── mycompany
+                └── app
+                    └── AppTest.class
+
+32 directories, 13 files
+
+Step: Then run the jar file like below
+[root@jenkins my-app]# java -cp target/my-app-1.0-SNAPSHOT.jar com.mycompany.app.App
+Hello World!
+==============================================================================================================
+Step: Now we want to push this project to github repo for this follow the below steps
+…or create a new repository on the command line
+go to the inside the  project man folder
+    $cd my-app
+	git init
+	git add .
+	git commit -m "first commit"
+	git branch -M jenkins //here branch is anything we can specify as we intrest
+	git remote add origin https://github.com/RamiReddyFullstackDeveloper/MySpringBootProjects.git //under this repo u will find jenkins brnach that we created above
+	git push -u origin jenkins //we we run this command it will ask us username and password
+	for username if you don't know run the below command copy the user.name value and for password go to the github profile setting->Developer Setting -->personal access token --> 
+	  git config --list
+	  [root@jenkins my-app]# git config --list
+	user.email=ramjava1256@gmail.com
+	user.name=ramireddy
+	core.repositoryformatversion=0
+	core.filemode=true
+	core.bare=false
+	core.logallrefupdates=true
+	remote.origin.url=https://github.com/RamiReddyFullstackDeveloper/MySpringBootProjects.git
+	remote.origin.fetch=+refs/heads/*:refs/remotes/origin/*
+	branch.jenkins.remote=origin
+	branch.jenkins.merge=refs/heads/jenkins
+
+[root@jenkins my-app]# git push -u origin jenkins
+Username for 'https://github.com': xyz
+Password for 'https://ramireddy@github.com': //here use the personal access token 
+
+github personal access token: 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
+                              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
+							  
+==================================================================================================================================
+
+
+
+
+
+
+

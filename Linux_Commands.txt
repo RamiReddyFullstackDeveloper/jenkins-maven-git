@@ -1,0 +1,82 @@
+Linux commands
+--------------
+
+1> whoami
+2> ps -ef | grep <servicename>
+   ps -ef | grep nginx
+3> set number ---> line number
+
+
+Nginx server commands
+---------------------
+Nginx server path
+default Nginx index.html file path : nano /user/share/nginx/html/index.html
+/etc/nginx
+4> sudo yum install nginx    | sudo amazon-linux-extras install nginx1
+5> sudo service nginx start
+6> sudo service nginx stop
+7> sudo service nginx status
+
+ or
+8>  sudo systemctl start nginx.service
+9>  sudo systemctl stop nginx.service
+10> sudo systemctl status nginx.service
+
+User Data script
+---------------
+#!/bin/bash
+sudo yum update -y
+sudo amazon-linux-extras install nginx1 -y 
+sudo systemctl enable nginx
+sudo systemctl start nginx
+--------------------------
+Another way to troubleshoot is to ssh into the instance and check if nginx service is running “sudo systemctl status nginx.service”, and check the error logs in “/var/log/nginx/” if they exist
+
+
+
+------------------------------------
+For Nginx server
+------------------------------------
+if the above commands not working use the below commands 
+sudo yum clean metadata
+sudo yum -y install nginx
+service nginx start 
+or systemctl start nginx.service
+[root@linux-server ~]# nginx -v
+nginx version: nginx/1.22.1
+
+server port details location : /etc/nginx/nginx.conf
+By default Nginx Web server default location is at /usr/share/nginx/html
+----------------------------------------------------------------------
+Httpd Server
+------------------------
+#!/bin/bash
+sudo yum update -y
+sudo yum -y install httpd
+sudo service httpd start
+chkconfig httpd on
+systemctl status httpd.service
+
+server port config details location : nano /etc/httpd/conf/httpd.conf
+By default httpd server location is at  /usr/share/httpd/noindex/index.html
+--------------------------------------------------------------------------
+
+chmod --> change or modify
+chown --> change owner
+Read donates     - 4
+Wrtie donates    - 2
+Execute doneates - 1
+
+cat command  : we can view the file
+nano command : we can open the file and write or modify the file file
+Vi Command   : we can open the file and write or modify the file file
+cp command   : we can copy command using cp <source-file> <destination-file>
+mv command   : we can move source file to another destination 
+top commmand : how many processors are running
+ps -a        : will list the process id's of running process same as like top command
+df -h        : will gives you how much memory utalizing of each file or folder
+
+kill 9 <pid> : will kill the process
+yum: yum is the utility, it will hell up us to install the softwares.
+yum install java -y 
+yum install git -y

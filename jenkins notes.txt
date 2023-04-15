@@ -1,0 +1,139 @@
+Jenkins
+
+Note: When ever we we stop the ec2-server and automatically our jenkins server will stop, but i don't want to run my jenkins server every time after my ec2-server start:
+for this i will use this command
+Note: systemctl enable jenkins
+----------------------------------------
+Step1:
+got to the office jenkins website : https://www.jenkins.io/doc/book/installing/linux/#prerequisites
+Login to the linux server using putty or aws cli or console ssh connnect
+and go to the cat /etc/os-release (look at Fedora)
+[root@devops ~]# cat /etc/os-release
+NAME="Amazon Linux"
+VERSION="2023"
+ID="amzn"
+ID_LIKE="fedora"
+VERSION_ID="2023"
+PLATFORM_ID="platform:al2023"
+PRETTY_NAME="Amazon Linux 2023"
+ANSI_COLOR="0;33"
+CPE_NAME="cpe:2.3:o:amazon:amazon_linux:2023"
+HOME_URL="https://aws.amazon.com/linux/"
+BUG_REPORT_URL="https://github.com/amazonlinux/amazon-linux-2023"
+SUPPORT_END="2028-03-01"
+
+
+Step2: look at above ID_LIKE="fedora" and run appropriate commands from the official website.
+and run below list of commands to install java and jenkins
+----------------------------------------------------------
+sudo wget -O /etc/yum.repos.d/jenkins.repo \
+    https://pkg.jenkins.io/redhat-stable/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+sudo dnf upgrade
+# Add required dependencies for the jenkins package
+sudo dnf install java-11-openjdk
+if this command not work, then run this command sudo dnf install java* (it will install latest available version of java)
+sudo dnf install jenkins
+sudo systemctl daemon-reload
+
+Step3: go to security group of ec2 server and add inbound rule to for jenkins server
+jenkins server runs on 8080 port.
+custom tcp  port 8080 all ALL ipv4
+
+
+Step4: to know the status of the jenkins
+       service jenkins status
+	   to run the jenkins server
+	   service jenkins start
+	   to stop the jenkins server
+	   service jenkins stop 
+	  
+Step5: jenkins admin password location 
+      cat /var/lib/jenkins/secrets/initialAdminPassword
+
+Step6: copy the public ip of ec2-server 
+         public ipv4:8080
+		 It will ask jenkins admin password : refere step5 for this 
+		 
+Step7: after rovide password it will open and ask you select install suggest pluggins it will start downloading the suggest pluggis.
+	
+Step8: it will launch the window for user creation
+       username : admin
+	   password : admin
+	   name: ramireddy
+	   email : ramireddyvakamalla@gmail.com
+	   click save and continue
+Step9: jenkins url : http://13.234.226.42:8080/
+Step10: jenkins is ready
+Step11: Start using jenkins
+Step12 : with this jenkins installation is ready
+
+----------------------------------------------------------------------------------------------------------------------
+
+Step1: create a jenkins job
+     for this we can click on New Item or Create job, I will select New Item
+     Enter Item Name :  my-first-jenkin-job
+	 Select Freestyle project 
+     click OK
+Step2: It will open configuration tab
+       go to build steps and select shell command
+       and the below line 
+       echo "today date is $date"	  
+       click on apply and save
+Step3: click on Build now.
+Step4: go to build history in the botton left and see the build number and click on that it will open the current build.
+       If we want to see complete console output of present build click on console outpu after click on the build number form build history.
+
+
+========================================================================  
+Step1: Now if we want to build the maven project then we need the maven pluggin in jenkins for this go to jenkins 
+       http://43.205.117.11:8080
+	   go to Dashboard --> manage jenkins ---> Manage Pluggins --> (from right sde bar scroll down) -->Available Pluggins --> search for maven under plugins and check the checkbox (Maven Integration)  --> Click Download now without restart.-----> check the checkbox below Restart jenkins after installation complete .
+	   
+Step2: No click on New Item and you will see Maven Project now.
+   give name as maven integration and select Maven Project and click Ok.
+Step3: Description : maven git and jenkins integarion
+Step4: check Github project 
+       project url : https://github.com/RamiReddyFullstackDeveloper/MySpringBootProjects.git   (copy from repo)
+	   click advance and Display name is : my spring boot project
+Step4: under source code management select git
+       Repo URL : https://github.com/RamiReddyFullstackDeveloper/MySpringBootProjects.git
+	   Credentials -->Click Add ---> it will open one popup for username and password
+	   username : ramireddy //you can find by hitting git config --list user.name as //this name is genarlly while we push something into git it will ask usernmae that is the name we need to provide here
+	    password: //go to github profie setting--->Developer Settings --> personal access token ---> Tokens ---> Generate token 
+		make sure to copy and save the somewhere it won't appera you after close the window.
+		password : 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
+		check checkbox treat my password is secret
+		Id: give any name my-app
+		Description: my-app
+		Finally click Add.
+Step5: now click on Credentials and select the my-app
+Step6: now go to Branches to Build section
+       select which branch you would like to build, my case am giving jenkins(that i have already created in git repo https://github.com/RamiReddyFullstackDeveloper/MySpringBootProjects.git)
+Step7: now go to Build section
+       Root Pom : pom.xml
+	   Goals and Options: package
+Step8: Apply and Save
+
+Step9: in case any build faild and you want to send an email to developer, then click on configure and click on post Steps
+      Build Settings 
+	    Email Notifications
+		Recipients : ramjava1256@gmail.com
+		click apply and save.
+		
+Step10: In case if you want to trigger the build automatially when ever new commit comes to github then got to
+         Configure --> Build Triggers ---> check the checkbox POLL SCM schedule 
+		 if you don't know about the scheduler visit the link https://crontab.guru/#1_*_*_*_* it will tells you
+		 Now if i want to trigger the build every one minute an going to give  scheduer is 
+		 */1 * * * * (every one minute) (it represnets minute, hour day of month , month, day of week)
+	   
+	   
+
+
+
+6pm
+
+10 nundi
+
+27pm 
+

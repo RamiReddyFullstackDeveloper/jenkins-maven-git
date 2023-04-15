@@ -1,0 +1,246 @@
+SSH
+
+Usecase: When ever you manage with one jenkins in your case and lots of jobs are buffering to keep run then may jenkins will crash then our work will be pending.
+-------
+
+So to avod this issues we may come with solution.
+Solution: We need to create at least three slave node's witht this even master node down the jobs will keep remains run without any issues.
+configuration on master:
+========================
+Steps: In manula case:
+Step: we have already an ec2 instance in one, if not create new instance and install the java and jenkins (for this refer jenins notes)
+Step1: First install the java and jenkins in one ec2 instance run's it.
+	   service jenkins status
+       service jenkins start
+	   systemctl enable jenkins //this commmand will help us automatic jenkins run, even when one node down and when tries to bring up new server at that time we don't need to run the jenkins server manully. 
+Step2: Create AMI image on first Step1: //here jenkns server we no need to run manually bcz in step1 one we ran the Systemctl enable jenkins command.
+Step3: Login into Step1 ec2-server using putty / os aws shell connect
+Step4: create root user for jenkins using below commands]
+       sudo su -
+	   hostname jenkins-master
+	   su - //it wil show you replace with ip
+	   [root@jenkins-master ~]# useradd jenkinsAdmin
+	   [root@jenkins-master ~]# passwd jenkinsAdmin
+		Changing password for user jenkinsAdmin.
+		New password:
+		BAD PASSWORD: The password contains the user name in some form
+		Retype new password:
+		passwd: all authentication tokens updated successfully.
+		[root@jenkins-master ~]#
+Step5: give the power to root user, for this open the visudo in terminal 
+      $visudo  //this command should run from root only
+Step6: then add the below line in the vimsudo ==>scroll down to find the below content and add the jenkinsAdmin ALL=(ALL) NOPASSWD: ALL under that text, it will ask you password when you try to run when ever we want
+		## Same thing without a password
+		# %wheel        ALL=(ALL)       NOPASSWD: ALL
+	    jenkinsAdmin ALL=(ALL)       NOPASSWD: ALL
+		then press ctrl X and enter Y ==>to come out
+
+Step6: now go to below path and do the nano sshd_config and go to the end of that file change the PasswordAuthentication no to yes
+      cd /etc/ssh  //this command should run from root only
+      $nano sshd_config => PasswordAuthentication yes
+      PasswordAuthentication yes
+
+Step7: now restart/reload the ssd using below command 
+	  service sshd reload or service sshd restart
+	  
+Step8: switch to user from root to jenkinsAdmin (what we create now before at step4)
+	   su jenkinsadmin //here only we need to switch the user from root to jenkinsAdmin
+	   [jenkinsAdmin@jenkins-master root]$ pwd
+       /root
+      [jenkinsAdmin@jenkins-master root]$ cd
+      [jenkinsAdmin@jenkins-master ~]$ pwd
+      /home/jenkinsAdmin
+
+Step9: Now generate the public and private key to connect to slave node, for this run the ssh-keygen command
+Step10:[jenkinsAdmin@jenkins-master ~]$ ssh-keygen
+		Generating public/private rsa key pair.
+		Enter file in which to save the key (/home/jenkinsAdmin/.ssh/id_rsa):
+		Created directory '/home/jenkinsAdmin/.ssh'.
+		Enter passphrase (empty for no passphrase):
+		Enter same passphrase again:
+		Your identification has been saved in /home/jenkinsAdmin/.ssh/id_rsa
+		Your public key has been saved in /home/jenkinsAdmin/.ssh/id_rsa.pub
+		The key fingerprint is:
+		SHA256:/yN9VnMUBTqXmse1rYlccIIs+R1fbAUleOCzlKEZVFY jenkinsAdmin@jenkins-master
+		The key's randomart image is:
+		+---[RSA 3072]----+
+		|         .o.=+E+=|
+		|         o B.+.=.|
+		|        o = @.+ *|
+		|         o o # ++|
+		|        S . = =o.|
+		|         . . + +o|
+		|          ..o o.o|
+		|          ..o o  |
+		|           ..+   |
+		+----[SHA256]-----+
+		[jenkinsAdmin@jenkins-master ~]$ pwd 
+		 home/jenkinsAdmin
+Step11: the public key stored in /home/jenkinsAdmin/.ssh/id_rsa.pub
+        the private key stored in /home/jenkinsAdmin/.ssh/id_rsa
+Step12: if we want to open the publick key do the follow command
+       [jenkinsAdmin@jenkins-master ~]$ nano /home/jenkinsAdmin/.ssh/id_rsa.pub
+	   
+
+======================================================================================
+configuration on slave/worker node: Now same configuration do on salve as well.
+========================
+Step1: salve node nothing but just create exact copy of the ec2-user from Step1 master configuration.
+Step2: login into aws console ===>EC2 Dashboard ====> Click on Instances ==>select instance which already jenkisn installed and running one 
+Step3: Click on Actions ===> Image and Template ==> Create Image ==>
+Step4: proveide the image name and image decription and leave it every thing
+       name : jenkins-slave
+	   dcripstion: jenkins-slave
+Step5: click Create Image
+Step6: Launch the AMI now
+Step7: Ec2 Dashboard ===?Image Section  ==> AMI ==> Launch Instance from AMI
+      Name: <give any name>
+	  And click My AMIS under Applications  and OS Images (Amzon Machine Image) sections
+	  Owned by Me Radio Selection
+	  Select AMI Name :
+	  Select Instance Type:
+	  Select Key Pair:
+	  Select Network Settings: choose same as Master node SG, VPC and Subnets and everything
+	  Finally click Launch Instance:
+Step5: Login into slave node uing public ipv4 throwugh Putty  (using same ppk file what we use for master node)
+Step6: then follow the same configuration as we did for master node above from Step4 onwards to step12:
+Note: See the great thins just run the service jenkins status (jenkins server keep running even we did not install and run manually, it is when we create an AMI from EC2 instace it will copy every thing same form that machine.)
+
+
+=======================================================================
+From master node
+---------------
+Step1: login into master node and switch root to jenkinsAdmin user 
+Step2: do ssh to worker node like below commands
+      ssh-copy-id jenkinsAdmin@worker-node-public-ip //if your seing any permission denied issue then pls follow the below changes.
+	  
+	  ----------------------------------------------
+	 sudo  vi /etc/ssh/sshd_config
+
+	1.PubkeyAuthentication yes
+
+	2.PasswordAuthentication yes
+
+	3.GSSAPIKeyExchange no
+
+	4.GSSAPICleanupCredentials no
+
+	systemctl restart sshd
+
+	ssh-keygen
+
+	chmod 777 /root/.ssh/id_rsa.pub 
+
+	ssh-copy-id -i /root/.ssh/id_rsa.pub user@ipaddress
+	
+Step3: once you run the above command it will ask you confirmation and enter yes
+[jenkinsAdmin@jenkins-master ~]$ ssh-copy-id jenkinsAdmin@35.154.235.130
+/usr/bin/ssh-copy-id: INFO: Source of key(s) to be installed: "/home/jenkinsAdmin/.ssh/id_rsa.pub"
+The authenticity of host '35.154.235.130 (35.154.235.130)' can't be established.
+ED25519 key fingerprint is SHA256:7f2VlNNWEWXoIv1v9kd5bj1zY1GLiSFwPrMp5mNOSuY.
+This host key is known by the following other names/addresses:
+    ~/.ssh/known_hosts:1: 13.235.128.48
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+/usr/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/usr/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+jenkinsAdmin@35.154.235.130's password:
+
+Number of key(s) added: 1
+
+Now try logging into the machine, with:   "ssh 'jenkinsAdmin@35.154.235.130'"
+and check to make sure that only the key(s) you wanted were added.
+
+[jenkinsAdmin@jenkins-master ~]$
+Step4: Now read the above console output from last but one two line, just follow same and connect to your slave/worker node
+	[jenkinsAdmin@jenkins-master ~]$ ssh 'jenkinsAdmin@35.154.235.130'
+
+	A newer release of "Amazon Linux" is available.
+	  Version 2023.0.20230329:
+	Run "/usr/bin/dnf check-release-update" for full release and version update info
+	   ,     #_
+	   ~\_  ####_        Amazon Linux 2023
+	  ~~  \_#####\
+	  ~~     \###|
+	  ~~       \#/ ___   https://aws.amazon.com/linux/amazon-linux-2023
+	   ~~       V~' '->
+		~~~         /
+		  ~~._.   _/
+			 _/ _/
+		   _/m/'
+	Last failed login: Fri Apr 14 16:26:36 UTC 2023 from 13.235.128.48 on ssh:notty
+	There was 1 failed login attempt since the last successful login.
+	Last login: Fri Apr 14 15:56:58 2023
+	[jenkinsAdmin@ip-172-30-0-183 ~]$
+
+
+
+====================================================================================
+------------------------------------------------------------------------------
+
+Jenkins configuration for master node and worker/slave node
+----------------------------------------------------------------
+Step1: login into jenkins
+       65.2.172.117:8080 ==>username : admin and pwd : admin
+Step2: Dashboard ==> Manage Jenkins ====> Manage node and clouds ---> NEW ITems --->
+       Node Name : <any-name> 
+	   Check Permanent Agent
+	   Click Create button
+Step3: Name : auto populate from step2: Node Name (what name we give)
+       Description: <any>
+	   No of execution : as per our requeiremet, for now i will give 1(bcz my machine wll not support more than that)
+       Remote Root Directory : give which locationof your worker node machine path that you want to save the files of your worker node 
+	                           am giveing /home/jenkinsAdmin //this is not master node path, this is the slave node
+		[jenkinsAdmin@jenkins-slave ~]$ pwd
+		/home/jenkinsAdmin  //this is after connecting to slave node from putty with jeninsAdmin user, this user we have created refer master configuration abv.
+       Label : Slave01 //we can give any name
+	   Usage : ther are two option 
+	          1 is Build as much as possible: if you select this master node will decide homay jbs need to run on this node
+			  2 Only build jobs with label expressions matching this node.
+	   Launch Method : Launch agent via SSH.
+	   Host: give the slave node public ipv4
+Step4: Credentials --> Add --> Jenkins ---> UserName : what ever username you created in slave node (i have creaed user in salve node that username is       jenkinsAdmin and pwd is jenkinsAdmin) ----Password: jenkinsAdmin
+       id = slave-credentilas 
+	   decription = slave-credentials
+	   And click Add
+Step5: Again go to Credentials Section and Select that id as we created  (slave-credentials)
+Step6: Host key verification strategy? there are four options but we have seleced (Manually key verification strategy) bcz we have hostname and credentials and trusted connecting using SSH.
+Step7: Availability : Keep this agent online as much as possible.
+Step8: Click Save
+Step9: Make sure this worker node suceess or failure, if we get success message everything is fine else not. for this go to again
+       Jenkins Dashboard --> Manage Jenkins --> Manage Node and clounds -->and click on Worker node (what we created in above as node name)
+	   Click on logs left side and you will see the console ouput as below.
+	   Remoting version: 3107.v665000b_51092
+		Launcher: SSHLauncher
+		Communication Protocol: Standard in/out
+		This is a Unix agent
+		Agent successfully connected and online
+Step10: now again go to Dashboard -->Manage Jenkins -->Nodes  for verifying both master and worker nodes are in synch or not (Clock difference column)
+        If both are synch means both are actively perform the tasks.
+		
+===========================================================
+Now lets demonstate the slave node
+------------------------------------------------------------
+Step1: Wroker node / Salve node help us whether we want to run the jobs specic to slave / worker node then it will help us.
+Step2: Now create new Jenkins Jobs -->
+        Dashboard --> New ITem --> name : slave-node-demo -->(select freestyle project) --> OK--> Decsription : give any --->
+		Check [Restric Where this project can be run]
+		Label Expression : slave01 [this one we provided as Label when we create New Node refer Step3 above]
+Step3: Now go to Build steps ===> Execute shell ---> echo "today date and time is ${date)"
+Step4: Apply and Save
+Step5: Now click on Build Now and look at Build History below (if you see peding worker node is offline) then go to 
+       Dashboard --> manage jenkins --> Manage Node and Clouds --> click on Worker Node and [Click Bring this to Online] and now this time go to Build history and click on build number --> console logs and see the Build Status.
+Note: you can see the above build whihc node taken care either master or worker node.
+     Started by user ramireddy
+	Running as SYSTEM
+	Building remotely on worker node (slave01) in workspace /home/jenkinsAdmin/workspace/slave-node-demo
+	[slave-node-demo] $ /bin/sh -xe /tmp/jenkins8530389472295318993.sh
+	++ date
+	+ echo 'today date and time is Sat Apr 15 05:51:39 UTC 2023'
+	today date and time is Sat Apr 15 05:51:39 UTC 2023
+	Finished: SUCCESS
+Step6: 	Building remotely on worker node (slave01) in workspace /home/jenkinsAdmin/workspace/slave-node-demo this line tells worker node has taken this build to run because we specified the Label Expression as slaveo1 at the time job creation while chekcing [Restric where this job can be run]
+
+
+Note: When we choose Usage is [Only build jobs with lable expression mathci this node] and the the problem with this scenario is suppose slave node is down and crash the job still wait for worker node comes backso this is not good approach so lets master node decides which worker node pick up to run the job. for this we have to make sure two things. that are 
+ 1 is Usage selection muct be [Build as much as possible] this is slave/worker node creation time.
+ 2 is during job creation we much un check the [Restric Where this project can be run].
