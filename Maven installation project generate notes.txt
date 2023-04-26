@@ -1,4 +1,11 @@
 Maven
+--------------------------------
+Maven web project generate command:
+----------------------------------
+mvn archetype:generate -DgroupId=com.sample.webproject -DartifactId=jenkins-maven-19-02 -DarchetypeArtifactId=maven-archetype-webapp -DinteractiveMode=false
+Maven normal project generate command:
+-------------------------------------
+mvn archetype:generate -DgroupId=com.mycompany.app -DartifactId=my-app -DarchetypeArtifactId=maven-archetype-quickstart -DarchetypeVersion=1.4 -DinteractiveMode=false
 
 Step1: go to maven official website 
        https://maven.apache.org/download.cgi
