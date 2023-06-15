@@ -1,0 +1,110 @@
+#!/bin/bash
+
+Sonar Server
+----------
+
+#Official website how to integrate sonarqube with jenkins
+https://docs.sonarqube.org/latest/analyzing-source-code/scanners/jenkins-extension-sonarqube/
+
+#Make sure Java and Snarqube versions are compatabile other wise your sonar server will not run.
+#Official website of sonarqube
+https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-6.7.7.zip
+
+#Step1: Install java first with sonar server compatability
+$ yum install java-1.8* -y
+$ java -version
+
+#Step2: Install sonar server in cd /opt folder
+$ sudo wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-6.7.7.zip
+
+#Step3: unzip it 
+$ sudo unzip <sonar-binary> or -xvzf <sonar-binary>
+#sonar server script path
+$cd /opt/sonarqube-6.7.7/bin/linux-x86-64
+$pwd
+/opt/sonarqube-6.7.7/bin/linux-x86-64
+
+#Step4: Change the user for sonarqube server from root user to any user.
+#First create any user with following command
+$ sudo useradd <user-name>
+#then change the user using below command
+$ sudo chown -R ec2-user:ec2-user  /opt/sonarqube-6.7.7
+
+#Before start sonarqube server first edit the sonar.sh script and and change the #RUN_AS_USER to be RUN_AS_USER=ec2-user
+
+#Step4: start sonar server
+$ ./sonar.sh start
+$ ./sonar.sh status
+	   
+Step5: go to browser and enter <ip>:9000 //here sonar by default port number is 9000
+#if not work by says site can not be reached now, then go to sonarqube ec2 server ---> Security Group and Add inbound rule for 9000
+#login to sonar using admin/admin by default
+
+Step1> Get Token: Generate Token # 80ebd8f9265165673787778ec607d44449d28c23
+#Skip this tutorial
+#Find it back anytime in the Help section
+Step2> Run analysis on your project : java
+      # What is your project's main language? # Java
+	  You are developing primarily in Java: what is your build technology?
+Step3:
+Execute the SonarQube Scanner for Maven from your computer
+Running a SonarQube analysis with Maven is straighforward. You just need to run the following command in your projects folder.
+mvn sonar:sonar \
+  -Dsonar.host.url=http://3.108.41.133:9000 \
+  -Dsonar.login=80ebd8f9265165673787778ec607d44449d28c23  #this one is same as Step1
+Please visit the official documentation of the SonarQube Scanner for Maven for more details.
+https://docs.sonarqube.org/latest/analyzing-source-code/scanners/sonarscanner-for-maven/
+
+#Sonar Integration with Jenkins server
+==================================================================================================================================================
+https://docs.sonarqube.org/latest/analyzing-source-code/scanners/jenkins-extension-sonarqube/
+
+Step6: go to jenkins server machine 
+Step7: from here Refer Read jenkins script from github using jenkins pipeline with declarative script.docx 
+#Install sonarqube
+Step8: go to Jenkins Dashboard ===> Manage Jenkins ==> Manege Pluggins---> Available plugins --> search for Sonarqube scanner and click restart after downld.
+Step9: After sonarqube scaner installed you can verify whether it is installed or not for that?
+       Jenkins Dashboard ===> Manage Jenkins----> Configure System and find sonarqube and configure sonar details here afer clicking SonarQube Integration
+       Name: sonarqube-server
+	   Service URL : <sonarqube-server-machine-ip>:<port> #ex http://3.108.41.133:9000/ 
+	   Server authentication token : click Add button	#if your not able to see like Jenkins after click Add buton first click apply and Save it and again go to dashboard----> Manage Jenkins ---> configure Syste--> search for SonarQube this time click Add button now you will see jenkins and provide token details
+Step10: in add credential part //
+           select Kind as select secret text.
+Step10: Now generate the token for this follow below
+----------------------------------------------------
+#login into sonarqube server using admin/admin username and password
+#Click on the username on top of right side ---> My Account ---> security --> provide token name and genarate. and copy the token
+        Secret : 80ebd8f9265165673787778ec607d44449d28c23
+		Id and Decription : sonarqube-server-secret
+Step11: Now click Apply and Add button.
+Step12: Add the below Stage in your jenkins file for sonar server
+        stage('sonar-server') { 
+            steps {
+               withSonarQubeEnv('sonarqube-server') { #make sure this name and sonarqube server configuration name(Step9 name) must be match
+                  sh 'mvn sonar:sonar'
+				}
+            }
+        }
+
+#Sonar Webhook
+#Webhooks notify external services when a project analysis is complete. An HTTP POST request including a JSON payload is sent to each URL. URLs may be specified at both the project and global levels. The project-level specification does not replace global-level webhooks.
+Step13: go to sonar server machine and find out webhook there provide the jenkins hostname and port.
+        Name: any-name
+		Payload URL : http://<jenkins-ip>:<port>/sonarqube-webhook
+		Contenty Type: application/json
+		secret : same as step10
+Step14: and click  Add Webhook button.
+Step15: Add the below Stage in your jenkins file for sonar. # for this step only Step13 required
+        stage('Quality Gate') {
+            steps {
+              timeout(time: 1, unit: 'HOURS') { #it will wait one hour if it is not complete with in one hour then it abort the pipeline.
+                waitForQualityGate abortPipeline: true
+              }
+            }
+        }
+#Note: For this above Stage we get syntax from the jenkins pipiline ---> at very end click on pipeline syntax and search for waitForQualityGate.
+
+#For complete jenkins file of git, maven, sonar and tomcat deploymnet integration with jenkins refer the my github accout using below url            
+	https://github.com/RamiReddyFullstackDeveloper/maven-web-app/blob/master/jenkinsfile
+
+
